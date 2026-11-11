@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../core/app_constants.dart';
 import '../models/drink_log.dart';
+import '../repositories/drink_repository.dart';
 
 class DrinkProvider extends ChangeNotifier {
-  // 1. Minimum State: loading, data, error
+  final DrinkRepository _repository;
+
+  // 1. State: loading, data, error
   bool _isLoading = false;
   String? _errorMessage;
   List<DrinkLog> _logs = [];
@@ -13,8 +16,9 @@ class DrinkProvider extends ChangeNotifier {
   String _selectedCategory = 'Semua';
   String _searchQuery = '';
 
-  DrinkProvider() {
-    _loadInitialData();
+  DrinkProvider({DrinkRepository? repository})
+      : _repository = repository ?? DrinkRepository() {
+    loadLogsFromDatabase();
   }
 
   // Getters
@@ -25,38 +29,22 @@ class DrinkProvider extends ChangeNotifier {
   String get selectedCategory => _selectedCategory;
   String get searchQuery => _searchQuery;
 
-  // Inisialisasi data awal (dummy state)
-  void _loadInitialData() {
+  // READ: Mengambil data riwayat dari Database melalui Repository
+  Future<void> loadLogsFromDatabase() async {
     _isLoading = true;
     _errorMessage = null;
-
-    final now = DateTime.now();
-    _logs = [
-      DrinkLog(
-        id: '1',
-        beverageType: 'Air Mineral',
-        volumeMl: 250,
-        loggedAt: now.subtract(const Duration(hours: 4)),
-        note: 'Gelas pertama bangun tidur',
-      ),
-      DrinkLog(
-        id: '2',
-        beverageType: 'Teh',
-        volumeMl: 200,
-        loggedAt: now.subtract(const Duration(hours: 2)),
-        note: 'Teh hijau hangat',
-      ),
-      DrinkLog(
-        id: '3',
-        beverageType: 'Air Mineral',
-        volumeMl: 300,
-        loggedAt: now.subtract(const Duration(minutes: 45)),
-        note: 'Setelah makan siang',
-      ),
-    ];
-
-    _isLoading = false;
     notifyListeners();
+
+    try {
+      final data = await _repository.fetchLogs();
+      _logs = data;
+      _errorMessage = null;
+    } catch (e) {
+      _errorMessage = 'Gagal memuat data dari database: ${e.toString()}';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   // Perhitungan total konsumsi hari ini (Computed Shared State)

@@ -6,7 +6,10 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const HydroTrackApp());
 
-    // Verify that the title appears
+    // Allow asynchronous timers (database & API load) to settle
+    await tester.pumpAndSettle();
+
+    // Verify that the title and target card appear
     expect(find.text('HydroTrack'), findsOneWidget);
     expect(find.text('Target Hari Ini'), findsOneWidget);
   });
