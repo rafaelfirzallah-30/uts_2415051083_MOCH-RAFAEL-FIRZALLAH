@@ -5,6 +5,7 @@ import '../core/app_theme.dart';
 import '../models/drink_log.dart';
 import '../providers/drink_provider.dart';
 import '../widgets/drink_item_tile.dart';
+import '../widgets/state_handler_view.dart';
 import 'drink_detail_screen.dart';
 import 'add_drink_screen.dart';
 
@@ -59,6 +60,11 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
         title: const Text('Riwayat Minum'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Segarkan Database',
+            onPressed: () => provider.loadLogsFromDatabase(),
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Tambah Catatan',
             onPressed: () {
@@ -78,7 +84,7 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Cari catatan minum atau catatan...',
+                hintText: 'Cari jenis minuman atau catatan...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -125,74 +131,88 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
           ),
           const Divider(height: 12),
 
-          // List Items dengan Fitur Swipe to Delete + Dialog Konfirmasi
+          // Reusable State Handler View (Loading, Error, Empty, Data)
           Expanded(
-            child: filteredLogs.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Tidak ada riwayat minum ditemukan',
-                      style: TextStyle(color: AppTheme.lightText),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    itemCount: filteredLogs.length,
-                    itemBuilder: (context, index) {
-                      final item = filteredLogs[index];
-                      return Dismissible(
-                        key: Key(item.id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade600,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Text(
-                                'Hapus',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(Icons.delete_sweep_rounded, color: Colors.white),
-                            ],
-                          ),
+            child: StateHandlerView(
+              isLoading: provider.isLoading,
+              loadingMessage: 'Memuat riwayat minum dari database...',
+              errorMessage: provider.errorMessage,
+              onRetry: () => provider.loadLogsFromDatabase(),
+              isEmpty: filteredLogs.isEmpty,
+              emptyTitle: 'Tidak Ada Riwayat',
+              emptyMessage: provider.selectedCategory != 'Semua' || _searchController.text.isNotEmpty
+                  ? 'Tidak ditemukan catatan yang cocok dengan filter atau kata kunci pencarian.'
+                  : 'Belum ada catatan konsumsi air minum. Mulai catat hidrasi harian Anda sekarang!',
+              emptyActionLabel: 'Tambah Catatan Minum',
+              onEmptyAction: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AddDrinkScreen()),
+                );
+              },
+              child: RefreshIndicator(
+                onRefresh: () => provider.loadLogsFromDatabase(),
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: filteredLogs.length,
+                  itemBuilder: (context, index) {
+                    final item = filteredLogs[index];
+                    return Dismissible(
+                      key: Key(item.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade600,
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        confirmDismiss: (direction) async {
-                          return await _confirmDeleteDialog(context, item);
-                        },
-                        onDismissed: (direction) async {
-                          final success = await provider.deleteDrinkLogInDatabase(item.id);
-                          if (context.mounted && success) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Catatan ${item.beverageType} (${item.volumeMl} ml) berhasil dihapus.'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        },
-                        child: DrinkItemTile(
-                          beverageType: item.beverageType,
-                          volumeMl: item.volumeMl,
-                          time: item.formattedTime,
-                          note: item.note,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => DrinkDetailScreen(drinkLog: item),
-                              ),
-                            );
-                          },
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Hapus',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(Icons.delete_sweep_rounded, color: Colors.white),
+                          ],
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                      confirmDismiss: (direction) async {
+                        return await _confirmDeleteDialog(context, item);
+                      },
+                      onDismissed: (direction) async {
+                        final success = await provider.deleteDrinkLogInDatabase(item.id);
+                        if (context.mounted && success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Catatan ${item.beverageType} (${item.volumeMl} ml) berhasil dihapus.'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
+                      child: DrinkItemTile(
+                        beverageType: item.beverageType,
+                        volumeMl: item.volumeMl,
+                        time: item.formattedTime,
+                        note: item.note,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DrinkDetailScreen(drinkLog: item),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
           ),
         ],
       ),
