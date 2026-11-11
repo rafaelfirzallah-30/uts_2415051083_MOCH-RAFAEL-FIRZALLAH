@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/app_constants.dart';
+import '../core/app_feedback.dart';
 import '../core/app_theme.dart';
 import '../core/responsive.dart';
 import '../models/drink_log.dart';
@@ -8,6 +9,7 @@ import '../providers/drink_provider.dart';
 import '../widgets/hydration_summary_card.dart';
 import '../widgets/quick_drink_button.dart';
 import '../widgets/drink_item_tile.dart';
+import '../widgets/quick_add_sheet.dart';
 import 'add_drink_screen.dart';
 import 'drink_detail_screen.dart';
 
@@ -32,6 +34,10 @@ class HomeScreen extends StatelessWidget {
         builder: (context) => const AddDrinkScreen(),
       ),
     );
+  }
+
+  void _openQuickSheet(BuildContext context) {
+    QuickAddSheet.show(context);
   }
 
   @override
@@ -81,9 +87,14 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.notifications_none_rounded),
+                icon: const Icon(Icons.notifications_active_outlined),
                 tooltip: 'Pengingat Minum',
-                onPressed: () {},
+                onPressed: () {
+                  AppFeedback.showInfo(
+                    context,
+                    'Pengingat minum aktif! Jadwal berikutnya: 2 jam lagi.',
+                  );
+                },
               ),
             ],
           ),
@@ -95,14 +106,29 @@ class HomeScreen extends StatelessWidget {
                   : _buildCompactLayout(context, provider);
             },
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _openAddDrink(context),
-            backgroundColor: AppTheme.primaryBlue,
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text(
-              'Catat Minum',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
+          floatingActionButton: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FloatingActionButton.small(
+                heroTag: 'fab_slider',
+                onPressed: () => _openQuickSheet(context),
+                backgroundColor: AppTheme.accentLight,
+                foregroundColor: AppTheme.primaryBlue,
+                tooltip: 'Catat Cepat (Slider)',
+                child: const Icon(Icons.tune_rounded),
+              ),
+              const SizedBox(height: 10),
+              FloatingActionButton.extended(
+                heroTag: 'fab_add',
+                onPressed: () => _openAddDrink(context),
+                backgroundColor: AppTheme.primaryBlue,
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text(
+                  'Catat Minum',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -123,7 +149,7 @@ class HomeScreen extends StatelessWidget {
             targetMl: provider.dailyTargetMl,
           ),
           const SizedBox(height: 20),
-          _buildQuickLogHeader(),
+          _buildQuickLogHeader(context),
           const SizedBox(height: 10),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -135,14 +161,21 @@ class HomeScreen extends StatelessWidget {
                     width: 82,
                     child: QuickDrinkButton(
                       volumeMl: volume,
-                      onTap: () {
-                        provider.quickAddWater(volume);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Berhasil menambah $volume ml air!'),
-                            duration: const Duration(seconds: 1),
-                          ),
-                        );
+                      onTap: () async {
+                        final success = await provider.quickAddWater(volume);
+                        if (context.mounted) {
+                          if (success) {
+                            AppFeedback.showSuccess(
+                              context,
+                              'Berhasil menambah $volume ml air ke database!',
+                            );
+                          } else {
+                            AppFeedback.showError(
+                              context,
+                              provider.errorMessage ?? 'Gagal menambah air.',
+                            );
+                          }
+                        }
                       },
                     ),
                   ),
@@ -203,7 +236,7 @@ class HomeScreen extends StatelessWidget {
                   targetMl: provider.dailyTargetMl,
                 ),
                 const SizedBox(height: 20),
-                _buildQuickLogHeader(),
+                _buildQuickLogHeader(context),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
@@ -213,14 +246,21 @@ class HomeScreen extends StatelessWidget {
                       width: 85,
                       child: QuickDrinkButton(
                         volumeMl: volume,
-                        onTap: () {
-                          provider.quickAddWater(volume);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Berhasil menambah $volume ml air!'),
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
+                        onTap: () async {
+                          final success = await provider.quickAddWater(volume);
+                          if (context.mounted) {
+                            if (success) {
+                              AppFeedback.showSuccess(
+                                context,
+                                'Berhasil menambah $volume ml air ke database!',
+                              );
+                            } else {
+                              AppFeedback.showError(
+                                context,
+                                provider.errorMessage ?? 'Gagal menambah air.',
+                              );
+                            }
+                          }
                         },
                       ),
                     );
@@ -272,14 +312,27 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickLogHeader() {
-    return const Text(
-      'Catat Cepat',
-      style: TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.bold,
-        color: AppTheme.darkText,
-      ),
+  Widget _buildQuickLogHeader(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Flexible(
+          child: Text(
+            'Catat Cepat',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.darkText,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        TextButton.icon(
+          onPressed: () => _openQuickSheet(context),
+          icon: const Icon(Icons.tune_rounded, size: 16),
+          label: const Text('Kustom'),
+        ),
+      ],
     );
   }
 

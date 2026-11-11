@@ -1,47 +1,86 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/app_constants.dart';
+import '../core/app_feedback.dart';
 import '../core/app_theme.dart';
 import '../providers/drink_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  void _showEditTargetDialog(BuildContext context, DrinkProvider provider) {
-    final controller = TextEditingController(text: provider.dailyTargetMl.toString());
+  void _showTargetSliderDialog(BuildContext context, DrinkProvider provider) {
+    double currentTarget = provider.dailyTargetMl.toDouble();
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Ubah Target Minum'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Target Harian (ml)',
-            suffixText: 'ml',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final newTarget = int.tryParse(controller.text);
-              if (newTarget != null && newTarget > 0) {
-                provider.setDailyTarget(newTarget);
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Target harian diubah menjadi $newTarget ml')),
-                );
-              }
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
-      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              icon: const Icon(Icons.water_drop_rounded, color: AppTheme.primaryBlue, size: 36),
+              title: const Text('Atur Target Harian', textAlign: TextAlign.center),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Geser slider untuk menentukan target kebutuhan cairan harian Anda:',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: AppTheme.lightText),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentLight,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${currentTarget.toInt()} ml',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryBlue,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Slider(
+                    value: currentTarget,
+                    min: 1000,
+                    max: 4000,
+                    divisions: 30, // kelipatan 100 ml
+                    label: '${currentTarget.toInt()} ml',
+                    activeColor: AppTheme.primaryBlue,
+                    onChanged: (val) {
+                      setDialogState(() {
+                        currentTarget = val;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actionsAlignment: MainAxisAlignment.spaceEvenly,
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Batal'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    provider.setDailyTarget(currentTarget.toInt());
+                    Navigator.pop(ctx);
+                    AppFeedback.showSuccess(
+                      context,
+                      'Target harian berhasil diubah ke ${currentTarget.toInt()} ml!',
+                    );
+                  },
+                  child: const Text('Terapkan'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -112,19 +151,21 @@ class ProfileScreen extends StatelessWidget {
                   ListTile(
                     leading: const Icon(Icons.water_drop_outlined, color: AppTheme.primaryBlue),
                     title: const Text('Target Minum Harian'),
-                    subtitle: const Text('Klik untuk mengubah target'),
+                    subtitle: const Text('Klik untuk mengubah dengan slider interaktif'),
                     trailing: Text(
                       '${drinkProvider.dailyTargetMl} ml',
                       style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
                     ),
-                    onTap: () => _showEditTargetDialog(context, drinkProvider),
+                    onTap: () => _showTargetSliderDialog(context, drinkProvider),
                   ),
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.alarm_rounded, color: AppTheme.primaryBlue),
                     title: const Text('Interval Pengingat'),
                     trailing: const Text('Setiap 2 Jam', style: TextStyle(fontWeight: FontWeight.bold)),
-                    onTap: () {},
+                    onTap: () {
+                      AppFeedback.showInfo(context, 'Interval pengingat diatur setiap 2 jam.');
+                    },
                   ),
                   const Divider(height: 1),
                   ListTile(
