@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/app_constants.dart';
 import '../core/app_theme.dart';
 import '../core/responsive.dart';
+import '../models/drink_log.dart';
 import '../widgets/hydration_summary_card.dart';
 import '../widgets/quick_drink_button.dart';
 import '../widgets/drink_item_tile.dart';
@@ -21,36 +22,43 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIntake = 750;
   final int _targetIntake = AppConstants.defaultDailyTargetMl;
 
-  final List<Map<String, dynamic>> _dummyLogs = [
-    {
-      'type': 'Air Mineral',
-      'volume': 250,
-      'time': '07:30',
-      'note': 'Gelas pertama bangun tidur',
-    },
-    {
-      'type': 'Teh',
-      'volume': 200,
-      'time': '10:00',
-      'note': 'Teh hijau hangat',
-    },
-    {
-      'type': 'Air Mineral',
-      'volume': 300,
-      'time': '12:45',
-      'note': 'Setelah makan siang',
-    },
+  final List<DrinkLog> _dummyLogs = [
+    DrinkLog(
+      id: '1',
+      beverageType: 'Air Mineral',
+      volumeMl: 250,
+      loggedAt: DateTime.now().subtract(const Duration(hours: 4)),
+      note: 'Gelas pertama bangun tidur',
+    ),
+    DrinkLog(
+      id: '2',
+      beverageType: 'Teh',
+      volumeMl: 200,
+      loggedAt: DateTime.now().subtract(const Duration(hours: 2)),
+      note: 'Teh hijau hangat',
+    ),
+    DrinkLog(
+      id: '3',
+      beverageType: 'Air Mineral',
+      volumeMl: 300,
+      loggedAt: DateTime.now().subtract(const Duration(minutes: 45)),
+      note: 'Setelah makan siang',
+    ),
   ];
 
   void _addQuickIntake(int volume) {
     setState(() {
       _currentIntake += volume;
-      _dummyLogs.insert(0, {
-        'type': 'Air Mineral',
-        'volume': volume,
-        'time': 'Baru saja',
-        'note': 'Quick log',
-      });
+      _dummyLogs.insert(
+        0,
+        DrinkLog(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          beverageType: 'Air Mineral',
+          volumeMl: volume,
+          loggedAt: DateTime.now(),
+          note: 'Quick log',
+        ),
+      );
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -60,11 +68,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openDetail(Map<String, dynamic> item) {
+  void _openDetail(DrinkLog item) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DrinkDetailScreen(drinkData: item),
+        builder: (context) => DrinkDetailScreen(drinkLog: item),
       ),
     );
   }
@@ -188,10 +196,10 @@ class _HomeScreenState extends State<HomeScreen> {
             itemBuilder: (context, index) {
               final log = _dummyLogs[index];
               return DrinkItemTile(
-                beverageType: log['type'] as String,
-                volumeMl: log['volume'] as int,
-                time: log['time'] as String,
-                note: log['note'] as String?,
+                beverageType: log.beverageType,
+                volumeMl: log.volumeMl,
+                time: log.formattedTime,
+                note: log.note,
                 onTap: () => _openDetail(log),
               );
             },
@@ -254,10 +262,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemBuilder: (context, index) {
                     final log = _dummyLogs[index];
                     return DrinkItemTile(
-                      beverageType: log['type'] as String,
-                      volumeMl: log['volume'] as int,
-                      time: log['time'] as String,
-                      note: log['note'] as String?,
+                      beverageType: log.beverageType,
+                      volumeMl: log.volumeMl,
+                      time: log.formattedTime,
+                      note: log.note,
                       onTap: () => _openDetail(log),
                     );
                   },

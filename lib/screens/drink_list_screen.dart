@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_constants.dart';
 import '../core/app_theme.dart';
+import '../models/drink_log.dart';
 import '../widgets/drink_item_tile.dart';
 import 'drink_detail_screen.dart';
 import 'add_drink_screen.dart';
@@ -16,37 +17,42 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
   String _selectedCategory = 'Semua';
   final TextEditingController _searchController = TextEditingController();
 
-  final List<Map<String, dynamic>> _allLogs = [
-    {
-      'type': 'Air Mineral',
-      'volume': 250,
-      'time': '07:30',
-      'note': 'Gelas pertama bangun tidur',
-    },
-    {
-      'type': 'Teh',
-      'volume': 200,
-      'time': '10:00',
-      'note': 'Teh hijau hangat',
-    },
-    {
-      'type': 'Air Mineral',
-      'volume': 300,
-      'time': '12:45',
-      'note': 'Setelah makan siang',
-    },
-    {
-      'type': 'Kopi',
-      'volume': 150,
-      'time': '15:15',
-      'note': 'Kopi hitam tanpa gula',
-    },
-    {
-      'type': 'Jus Buah',
-      'volume': 250,
-      'time': '17:00',
-      'note': 'Jus jeruk segar',
-    },
+  final List<DrinkLog> _allLogs = [
+    DrinkLog(
+      id: '1',
+      beverageType: 'Air Mineral',
+      volumeMl: 250,
+      loggedAt: DateTime.now().subtract(const Duration(hours: 6)),
+      note: 'Gelas pertama bangun tidur',
+    ),
+    DrinkLog(
+      id: '2',
+      beverageType: 'Teh',
+      volumeMl: 200,
+      loggedAt: DateTime.now().subtract(const Duration(hours: 4)),
+      note: 'Teh hijau hangat',
+    ),
+    DrinkLog(
+      id: '3',
+      beverageType: 'Air Mineral',
+      volumeMl: 300,
+      loggedAt: DateTime.now().subtract(const Duration(hours: 2)),
+      note: 'Setelah makan siang',
+    ),
+    DrinkLog(
+      id: '4',
+      beverageType: 'Kopi',
+      volumeMl: 150,
+      loggedAt: DateTime.now().subtract(const Duration(hours: 1)),
+      note: 'Kopi hitam tanpa gula',
+    ),
+    DrinkLog(
+      id: '5',
+      beverageType: 'Jus Buah',
+      volumeMl: 250,
+      loggedAt: DateTime.now().subtract(const Duration(minutes: 30)),
+      note: 'Jus jeruk segar',
+    ),
   ];
 
   @override
@@ -59,11 +65,11 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
   Widget build(BuildContext context) {
     final filteredLogs = _allLogs.where((log) {
       final matchesCategory = _selectedCategory == 'Semua' ||
-          (log['type'] as String).toLowerCase() == _selectedCategory.toLowerCase();
+          log.beverageType.toLowerCase() == _selectedCategory.toLowerCase();
       final query = _searchController.text.toLowerCase();
       final matchesSearch = query.isEmpty ||
-          (log['type'] as String).toLowerCase().contains(query) ||
-          ((log['note'] as String?)?.toLowerCase().contains(query) ?? false);
+          log.beverageType.toLowerCase().contains(query) ||
+          log.note.toLowerCase().contains(query);
       return matchesCategory && matchesSearch;
     }).toList();
 
@@ -152,16 +158,15 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
                     itemBuilder: (context, index) {
                       final item = filteredLogs[index];
                       return DrinkItemTile(
-                        beverageType: item['type'] as String,
-                        volumeMl: item['volume'] as int,
-                        time: item['time'] as String,
-                        note: item['note'] as String?,
+                        beverageType: item.beverageType,
+                        volumeMl: item.volumeMl,
+                        time: item.formattedTime,
+                        note: item.note,
                         onTap: () {
-                          // Navigation List -> Detail passing data!
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => DrinkDetailScreen(drinkData: item),
+                              builder: (context) => DrinkDetailScreen(drinkLog: item),
                             ),
                           );
                         },

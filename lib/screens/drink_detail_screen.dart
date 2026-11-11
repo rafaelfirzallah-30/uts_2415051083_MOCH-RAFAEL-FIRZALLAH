@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
+import '../models/drink_log.dart';
 import 'edit_drink_screen.dart';
 
 class DrinkDetailScreen extends StatelessWidget {
-  final Map<String, dynamic> drinkData;
+  final DrinkLog drinkLog;
 
   const DrinkDetailScreen({
     super.key,
-    required this.drinkData,
+    required this.drinkLog,
   });
 
   @override
   Widget build(BuildContext context) {
-    final String type = drinkData['type'] as String? ?? 'Air Mineral';
-    final int volume = drinkData['volume'] as int? ?? 250;
-    final String time = drinkData['time'] as String? ?? '-';
-    final String note = drinkData['note'] as String? ?? 'Tidak ada catatan';
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Catatan Minum'),
@@ -28,7 +24,7 @@ class DrinkDetailScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => EditDrinkScreen(drinkData: drinkData),
+                  builder: (context) => EditDrinkScreen(drinkLog: drinkLog),
                 ),
               );
             },
@@ -41,7 +37,7 @@ class DrinkDetailScreen extends StatelessWidget {
                 context: context,
                 builder: (ctx) => AlertDialog(
                   title: const Text('Konfirmasi Hapus'),
-                  content: Text('Hapus catatan $type ($volume ml)?'),
+                  content: Text('Hapus catatan ${drinkLog.beverageType} (${drinkLog.volumeMl} ml)?'),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx),
@@ -53,7 +49,7 @@ class DrinkDetailScreen extends StatelessWidget {
                         Navigator.pop(ctx);
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Catatan $type berhasil dihapus')),
+                          SnackBar(content: Text('Catatan ${drinkLog.beverageType} berhasil dihapus')),
                         );
                       },
                       child: const Text('Hapus'),
@@ -97,7 +93,7 @@ class DrinkDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    '$volume ml',
+                    '${drinkLog.volumeMl} ml',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 32,
@@ -105,7 +101,7 @@ class DrinkDetailScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    type,
+                    drinkLog.beverageType,
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
@@ -123,13 +119,19 @@ class DrinkDetailScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    _buildDetailRow(Icons.access_time_rounded, 'Waktu Minum', time),
+                    _buildDetailRow(Icons.calendar_today_rounded, 'Tanggal Minum', drinkLog.formattedDate),
                     const Divider(height: 24),
-                    _buildDetailRow(Icons.category_outlined, 'Jenis Minuman', type),
+                    _buildDetailRow(Icons.access_time_rounded, 'Waktu Minum', drinkLog.formattedTime),
                     const Divider(height: 24),
-                    _buildDetailRow(Icons.local_drink_outlined, 'Volume Cairan', '$volume ml'),
+                    _buildDetailRow(Icons.category_outlined, 'Jenis Minuman', drinkLog.beverageType),
                     const Divider(height: 24),
-                    _buildDetailRow(Icons.note_alt_outlined, 'Catatan Tambahan', note),
+                    _buildDetailRow(Icons.local_drink_outlined, 'Volume Cairan', '${drinkLog.volumeMl} ml'),
+                    const Divider(height: 24),
+                    _buildDetailRow(
+                      Icons.note_alt_outlined,
+                      'Catatan Tambahan',
+                      drinkLog.note.isNotEmpty ? drinkLog.note : 'Tidak ada catatan',
+                    ),
                   ],
                 ),
               ),

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import '../core/app_constants.dart';
 import '../core/app_theme.dart';
+import '../models/drink_log.dart';
 
 class EditDrinkScreen extends StatefulWidget {
-  final Map<String, dynamic> drinkData;
+  final DrinkLog drinkLog;
 
   const EditDrinkScreen({
     super.key,
-    required this.drinkData,
+    required this.drinkLog,
   });
 
   @override
@@ -23,15 +24,12 @@ class _EditDrinkScreenState extends State<EditDrinkScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedType = widget.drinkData['type'] as String? ?? 'Air Mineral';
+    _selectedType = widget.drinkLog.beverageType;
     if (!AppConstants.beverageCategories.contains(_selectedType)) {
       _selectedType = AppConstants.beverageCategories.first;
     }
-    final int volume = widget.drinkData['volume'] as int? ?? 250;
-    _volumeController = TextEditingController(text: volume.toString());
-    _noteController = TextEditingController(
-      text: widget.drinkData['note'] as String? ?? '',
-    );
+    _volumeController = TextEditingController(text: widget.drinkLog.volumeMl.toString());
+    _noteController = TextEditingController(text: widget.drinkLog.note);
   }
 
   @override
