@@ -52,49 +52,54 @@ class DrinkItemTile extends StatelessWidget {
     final color = _getColorForBeverage(beverageType);
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        dense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         leading: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
             _getIconForBeverage(beverageType),
             color: color,
-            size: 24,
+            size: 20,
           ),
         ),
         title: Text(
           beverageType,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontWeight: FontWeight.w600,
-            fontSize: 15,
+            fontSize: 14,
             color: AppTheme.darkText,
           ),
         ),
         subtitle: Text(
           note != null && note!.isNotEmpty ? '$time • $note' : time,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             color: AppTheme.lightText,
           ),
         ),
         trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: AppTheme.accentLight,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
             '$volumeMl ml',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               color: AppTheme.primaryBlue,
-              fontSize: 13,
+              fontSize: 12,
             ),
           ),
         ),
