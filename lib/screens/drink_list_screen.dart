@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/app_constants.dart';
 import '../core/app_theme.dart';
+import '../core/responsive.dart';
 import '../models/drink_log.dart';
 import '../providers/drink_provider.dart';
 import '../widgets/drink_item_tile.dart';
@@ -54,11 +55,24 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<DrinkProvider>();
     final filteredLogs = provider.filteredLogs;
+    final isWide = Responsive.isWide(context);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Riwayat Minum'),
         actions: [
+          // Responsive Mode Indicator Chip
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Chip(
+              label: Text(
+                isWide ? 'Grid View' : 'List View',
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+              ),
+              visualDensity: VisualDensity.compact,
+              backgroundColor: AppTheme.accentLight,
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Segarkan Database',
@@ -131,7 +145,7 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
           ),
           const Divider(height: 12),
 
-          // Reusable State Handler View (Loading, Error, Empty, Data)
+          // Reusable State Handler View with Responsive List (Compact) vs Grid (Wide)
           Expanded(
             child: StateHandlerView(
               isLoading: provider.isLoading,
@@ -152,70 +166,108 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
               },
               child: RefreshIndicator(
                 onRefresh: () => provider.loadLogsFromDatabase(),
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  itemCount: filteredLogs.length,
-                  itemBuilder: (context, index) {
-                    final item = filteredLogs[index];
-                    return Dismissible(
-                      key: Key(item.id),
-                      direction: DismissDirection.endToStart,
-                      background: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade600,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 20),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              'Hapus',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                            ),
-                            SizedBox(width: 8),
-                            Icon(Icons.delete_sweep_rounded, color: Colors.white),
-                          ],
-                        ),
-                      ),
-                      confirmDismiss: (direction) async {
-                        return await _confirmDeleteDialog(context, item);
-                      },
-                      onDismissed: (direction) async {
-                        final success = await provider.deleteDrinkLogInDatabase(item.id);
-                        if (context.mounted && success) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Catatan ${item.beverageType} (${item.volumeMl} ml) berhasil dihapus.'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      },
-                      child: DrinkItemTile(
-                        beverageType: item.beverageType,
-                        volumeMl: item.volumeMl,
-                        time: item.formattedTime,
-                        note: item.note,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DrinkDetailScreen(drinkLog: item),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ),
+                child: isWide
+                    ? _buildWideGridView(filteredLogs, provider)
+                    : _buildCompactListView(filteredLogs, provider),
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // 1. COMPACT MODE: 1-Column Dismissible ListView
+  Widget _buildCompactListView(List<DrinkLog> logs, DrinkProvider provider) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: logs.length,
+      itemBuilder: (context, index) {
+        final item = logs[index];
+        return Dismissible(
+          key: Key(item.id),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.red.shade600,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  'Hapus',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: 8),
+                Icon(Icons.delete_sweep_rounded, color: Colors.white),
+              ],
+            ),
+          ),
+          confirmDismiss: (direction) async {
+            return await _confirmDeleteDialog(context, item);
+          },
+          onDismissed: (direction) async {
+            final success = await provider.deleteDrinkLogInDatabase(item.id);
+            if (context.mounted && success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Catatan ${item.beverageType} (${item.volumeMl} ml) berhasil dihapus.'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          },
+          child: DrinkItemTile(
+            beverageType: item.beverageType,
+            volumeMl: item.volumeMl,
+            time: item.formattedTime,
+            note: item.note,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DrinkDetailScreen(drinkLog: item),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // 2. WIDE MODE: 2-Column Responsive GridView
+  Widget _buildWideGridView(List<DrinkLog> logs, DrinkProvider provider) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        mainAxisExtent: 88,
+      ),
+      itemCount: logs.length,
+      itemBuilder: (context, index) {
+        final item = logs[index];
+        return DrinkItemTile(
+          beverageType: item.beverageType,
+          volumeMl: item.volumeMl,
+          time: item.formattedTime,
+          note: item.note,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DrinkDetailScreen(drinkLog: item),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

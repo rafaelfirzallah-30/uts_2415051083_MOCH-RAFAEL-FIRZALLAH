@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import '../core/app_theme.dart';
 
 class HydrationSummaryCard extends StatelessWidget {
   final int currentIntakeMl;
   final int targetMl;
+  final int streakDays;
 
   const HydrationSummaryCard({
     super.key,
     required this.currentIntakeMl,
     required this.targetMl,
+    this.streakDays = 3,
   });
 
   @override
@@ -20,18 +21,18 @@ class HydrationSummaryCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppTheme.primaryBlue, AppTheme.primaryCyan],
+          colors: [Color(0xFF0277BD), Color(0xFF00ACC1)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryBlue.withValues(alpha: 0.3),
-            blurRadius: 12,
+            color: const Color(0xFF0277BD).withValues(alpha: 0.35),
+            blurRadius: 14,
             offset: const Offset(0, 6),
           ),
         ],
@@ -40,26 +41,52 @@ class HydrationSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Top Row: Title + Streak Badge + Percentage
           Row(
             children: [
               const Icon(Icons.water_drop, color: Colors.white, size: 20),
               const SizedBox(width: 6),
               const Expanded(
                 child: Text(
-                  'Target Hari Ini',
+                  'Target Hidrasi Hari Ini',
                   style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              // Streak badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                margin: const EdgeInsets.only(right: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.amber.shade600.withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 14),
+                    const SizedBox(width: 3),
+                    Text(
+                      '$streakDays Hari',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Percentage badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
                   '$percentage%',
@@ -72,7 +99,9 @@ class HydrationSummaryCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+
+          // Main Stats Row
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -84,15 +113,16 @@ class HydrationSummaryCard extends StatelessWidget {
                   '$currentIntakeMl',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 32,
+                    fontSize: 34,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   '/ $targetMl ml',
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
@@ -101,23 +131,27 @@ class HydrationSummaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
+
+          // Smooth Progress Bar
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: progress,
-              minHeight: 8,
-              backgroundColor: Colors.white.withValues(alpha: 0.25),
+              minHeight: 10,
+              backgroundColor: Colors.white.withValues(alpha: 0.22),
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ),
           const SizedBox(height: 10),
+
+          // Status helper text
           Text(
             percentage >= 100
-                ? 'Target hidrasi tercapai! Tetap jaga hidrasi tubuh.'
-                : 'Tersisa ${targetMl - currentIntakeMl > 0 ? targetMl - currentIntakeMl : 0} ml lagi untuk mencapai target.',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
+                ? 'Target hidrasi tercapai! Tetap pertahankan pola minum sehat.'
+                : 'Tersisa ${targetMl - currentIntakeMl > 0 ? targetMl - currentIntakeMl : 0} ml lagi untuk mencapai target harian.',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 11.5,
               fontWeight: FontWeight.w400,
             ),
             maxLines: 2,

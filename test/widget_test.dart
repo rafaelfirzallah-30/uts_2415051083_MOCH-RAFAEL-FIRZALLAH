@@ -11,6 +11,6 @@ void main() {
 
     // Verify that the title and target card appear
     expect(find.text('HydroTrack'), findsOneWidget);
-    expect(find.text('Target Hari Ini'), findsOneWidget);
+    expect(find.text('Target Hidrasi Hari Ini'), findsOneWidget);
   });
 }

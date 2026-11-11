@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/app_constants.dart';
 import '../core/app_feedback.dart';
 import '../core/app_theme.dart';
+import '../core/responsive.dart';
 import '../providers/drink_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -87,6 +88,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final drinkProvider = context.watch<DrinkProvider>();
+    final isWide = Responsive.isWide(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -94,90 +96,137 @@ class ProfileScreen extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
+        child: isWide
+            ? _buildWideLayout(context, drinkProvider)
+            : _buildCompactLayout(context, drinkProvider),
+      ),
+    );
+  }
+
+  // 1. Compact Layout
+  Widget _buildCompactLayout(BuildContext context, DrinkProvider drinkProvider) {
+    return Column(
+      children: [
+        _buildAvatarSection(),
+        const SizedBox(height: 24),
+        _buildStudentInfoCard(),
+        const SizedBox(height: 16),
+        _buildSettingsCard(context, drinkProvider),
+      ],
+    );
+  }
+
+  // 2. Wide Layout (Split 2 Columns)
+  Widget _buildWideLayout(BuildContext context, DrinkProvider drinkProvider) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 1,
+          child: Column(
+            children: [
+              _buildAvatarSection(),
+              const SizedBox(height: 20),
+              _buildStudentInfoCard(),
+            ],
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          flex: 1,
+          child: _buildSettingsCard(context, drinkProvider),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAvatarSection() {
+    return Center(
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 46,
+            backgroundColor: AppTheme.accentLight,
+            child: const Icon(
+              Icons.person_rounded,
+              size: 48,
+              color: AppTheme.primaryBlue,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Moch. Rafael Firzallah',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const Text(
+            'Project UTS Pemrograman Mobile • 2026',
+            style: TextStyle(fontSize: 13, color: AppTheme.lightText),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStudentInfoCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // User Avatar Card
-            Center(
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 46,
-                    backgroundColor: AppTheme.accentLight,
-                    child: const Icon(
-                      Icons.person_rounded,
-                      size: 48,
-                      color: AppTheme.primaryBlue,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Rafael Firzallah',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const Text(
-                    'Project UTS Pemrograman Mobile',
-                    style: TextStyle(fontSize: 13, color: AppTheme.lightText),
-                  ),
-                ],
-              ),
+            const Text(
+              'Informasi Mahasiswa',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
-            const SizedBox(height: 24),
-
-            // UTS Info Card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Informasi Mahasiswa',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    const Divider(height: 20),
-                    _buildInfoRow('Mata Kuliah', 'Pemrograman Mobile (UTS)'),
-                    _buildInfoRow('Tema Project', 'Aplikasi Pengingat & Pencatat Minum'),
-                    _buildInfoRow('Aplikasi', AppConstants.appName),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Settings Card with Shared State
-            Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.water_drop_outlined, color: AppTheme.primaryBlue),
-                    title: const Text('Target Minum Harian'),
-                    subtitle: const Text('Klik untuk mengubah dengan slider interaktif'),
-                    trailing: Text(
-                      '${drinkProvider.dailyTargetMl} ml',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
-                    ),
-                    onTap: () => _showTargetSliderDialog(context, drinkProvider),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.alarm_rounded, color: AppTheme.primaryBlue),
-                    title: const Text('Interval Pengingat'),
-                    trailing: const Text('Setiap 2 Jam', style: TextStyle(fontWeight: FontWeight.bold)),
-                    onTap: () {
-                      AppFeedback.showInfo(context, 'Interval pengingat diatur setiap 2 jam.');
-                    },
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.info_outline_rounded, color: AppTheme.primaryBlue),
-                    title: const Text('Versi Aplikasi'),
-                    trailing: const Text('v1.0.0'),
-                  ),
-                ],
-              ),
-            ),
+            const Divider(height: 20),
+            _buildInfoRow('Nama', 'Moch. Rafael Firzallah'),
+            _buildInfoRow('NIM', '2415051083'),
+            _buildInfoRow('Mata Kuliah', 'Pemrograman Mobile (UTS)'),
+            _buildInfoRow('Tema Project', 'Aplikasi Pengingat & Pencatat Minum'),
+            _buildInfoRow('Nama Aplikasi', AppConstants.appName),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsCard(BuildContext context, DrinkProvider drinkProvider) {
+    return Card(
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.water_drop_outlined, color: AppTheme.primaryBlue),
+            title: const Text('Target Minum Harian'),
+            subtitle: const Text('Klik untuk mengubah dengan slider interaktif'),
+            trailing: Text(
+              '${drinkProvider.dailyTargetMl} ml',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+            ),
+            onTap: () => _showTargetSliderDialog(context, drinkProvider),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.alarm_rounded, color: AppTheme.primaryBlue),
+            title: const Text('Interval Pengingat'),
+            trailing: const Text('Setiap 2 Jam', style: TextStyle(fontWeight: FontWeight.bold)),
+            onTap: () {
+              AppFeedback.showInfo(context, 'Interval pengingat diatur setiap 2 jam.');
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.cloud_done_rounded, color: Colors.green),
+            title: const Text('Status Database'),
+            subtitle: const Text('Terhubung ke Supabase Cloud & Local Cache'),
+            trailing: const Icon(Icons.check_circle, color: Colors.green, size: 20),
+          ),
+          const Divider(height: 1),
+          const ListTile(
+            leading: Icon(Icons.info_outline_rounded, color: AppTheme.primaryBlue),
+            title: Text('Versi Aplikasi'),
+            trailing: Text('v1.0.0'),
+          ),
+        ],
       ),
     );
   }
