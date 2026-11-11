@@ -31,6 +31,14 @@ class DrinkProvider extends ChangeNotifier {
   String get selectedCategory => _selectedCategory;
   String get searchQuery => _searchQuery;
 
+  DrinkLog? getLogById(String id) {
+    try {
+      return _logs.firstWhere((log) => log.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
   // READ: Mengambil data riwayat dari Database melalui Repository
   Future<void> loadLogsFromDatabase() async {
     _isLoading = true;
@@ -82,12 +90,26 @@ class DrinkProvider extends ChangeNotifier {
     return await createDrinkLog(newLog);
   }
 
-  // UPDATE: Memperbarui data catatan minum
-  void updateDrinkLog(DrinkLog updatedLog) {
-    final index = _logs.indexWhere((log) => log.id == updatedLog.id);
-    if (index != -1) {
-      _logs[index] = updatedLog;
+  // UPDATE: Memperbarui data catatan minum di Database (Supabase)
+  Future<bool> updateDrinkLogInDatabase(DrinkLog updatedLog) async {
+    _isSaving = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final result = await _repository.updateLog(updatedLog);
+      final index = _logs.indexWhere((log) => log.id == result.id);
+      if (index != -1) {
+        _logs[index] = result;
+      }
+      _isSaving = false;
       notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Gagal memperbarui catatan: ${e.toString()}';
+      _isSaving = false;
+      notifyListeners();
+      return false;
     }
   }
 
