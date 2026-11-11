@@ -6,8 +6,9 @@ import '../repositories/drink_repository.dart';
 class DrinkProvider extends ChangeNotifier {
   final DrinkRepository _repository;
 
-  // 1. State: loading, data, error
+  // 1. State: loading, data, error, saving
   bool _isLoading = false;
+  bool _isSaving = false;
   String? _errorMessage;
   List<DrinkLog> _logs = [];
 
@@ -23,6 +24,7 @@ class DrinkProvider extends ChangeNotifier {
 
   // Getters
   bool get isLoading => _isLoading;
+  bool get isSaving => _isSaving;
   String? get errorMessage => _errorMessage;
   List<DrinkLog> get logs => List.unmodifiable(_logs);
   int get dailyTargetMl => _dailyTargetMl;
@@ -45,6 +47,54 @@ class DrinkProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  // CREATE: Menyimpan catatan minum baru ke Database (Supabase)
+  Future<bool> createDrinkLog(DrinkLog log) async {
+    _isSaving = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final savedLog = await _repository.addLog(log);
+      _logs.removeWhere((item) => item.id == savedLog.id);
+      _logs.insert(0, savedLog);
+      _isSaving = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Gagal menyimpan catatan: ${e.toString()}';
+      _isSaving = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // CREATE CEPAT: Quick Add water intake directly to Database
+  Future<bool> quickAddWater(int volumeMl) async {
+    final newLog = DrinkLog(
+      id: 'log-${DateTime.now().millisecondsSinceEpoch}',
+      beverageType: 'Air Mineral',
+      volumeMl: volumeMl,
+      loggedAt: DateTime.now(),
+      note: 'Catat cepat',
+    );
+    return await createDrinkLog(newLog);
+  }
+
+  // UPDATE: Memperbarui data catatan minum
+  void updateDrinkLog(DrinkLog updatedLog) {
+    final index = _logs.indexWhere((log) => log.id == updatedLog.id);
+    if (index != -1) {
+      _logs[index] = updatedLog;
+      notifyListeners();
+    }
+  }
+
+  // DELETE: Menghapus catatan minum
+  void deleteDrinkLog(String id) {
+    _logs.removeWhere((log) => log.id == id);
+    notifyListeners();
   }
 
   // Perhitungan total konsumsi hari ini (Computed Shared State)
@@ -100,35 +150,5 @@ class DrinkProvider extends ChangeNotifier {
       _dailyTargetMl = newTarget;
       notifyListeners();
     }
-  }
-
-  // Operasi State (Tambah, Edit, Hapus)
-  void addDrinkLog(DrinkLog log) {
-    _logs.insert(0, log);
-    notifyListeners();
-  }
-
-  void quickAddWater(int volumeMl) {
-    final newLog = DrinkLog(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      beverageType: 'Air Mineral',
-      volumeMl: volumeMl,
-      loggedAt: DateTime.now(),
-      note: 'Catat cepat',
-    );
-    addDrinkLog(newLog);
-  }
-
-  void updateDrinkLog(DrinkLog updatedLog) {
-    final index = _logs.indexWhere((log) => log.id == updatedLog.id);
-    if (index != -1) {
-      _logs[index] = updatedLog;
-      notifyListeners();
-    }
-  }
-
-  void deleteDrinkLog(String id) {
-    _logs.removeWhere((log) => log.id == id);
-    notifyListeners();
   }
 }
