@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'core/app_constants.dart';
 import 'core/app_theme.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_screen.dart';
 
 void main() {
   runApp(const HydroTrackApp());
@@ -16,7 +16,7 @@ class HydroTrackApp extends StatelessWidget {
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const HomeScreen(),
+      home: const MainScreen(),
     );
   }
 }

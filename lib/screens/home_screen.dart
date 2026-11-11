@@ -5,9 +5,13 @@ import '../core/responsive.dart';
 import '../widgets/hydration_summary_card.dart';
 import '../widgets/quick_drink_button.dart';
 import '../widgets/drink_item_tile.dart';
+import 'add_drink_screen.dart';
+import 'drink_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final VoidCallback? onNavigateToList;
+
+  const HomeScreen({super.key, this.onNavigateToList});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -48,6 +52,30 @@ class _HomeScreenState extends State<HomeScreen> {
         'note': 'Quick log',
       });
     });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Berhasil menambah $volume ml air!'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  void _openDetail(Map<String, dynamic> item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DrinkDetailScreen(drinkData: item),
+      ),
+    );
+  }
+
+  void _openAddDrink() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddDrinkScreen(),
+      ),
+    );
   }
 
   @override
@@ -108,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: _openAddDrink,
         backgroundColor: AppTheme.primaryBlue,
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
@@ -164,6 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 volumeMl: log['volume'] as int,
                 time: log['time'] as String,
                 note: log['note'] as String?,
+                onTap: () => _openDetail(log),
               );
             },
           ),
@@ -210,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(width: 20),
 
-          // Right Column (Responsive Grid for wide screens)
+          // Right Column
           Expanded(
             flex: 1,
             child: Column(
@@ -229,6 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       volumeMl: log['volume'] as int,
                       time: log['time'] as String,
                       note: log['note'] as String?,
+                      onTap: () => _openDetail(log),
                     );
                   },
                 ),
@@ -267,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         TextButton(
-          onPressed: () {},
+          onPressed: widget.onNavigateToList,
           child: const Text('Lihat Semua'),
         ),
       ],
