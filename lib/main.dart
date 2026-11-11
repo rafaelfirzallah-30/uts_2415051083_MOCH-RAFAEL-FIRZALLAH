@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'core/app_constants.dart';
 import 'core/app_theme.dart';
 import 'providers/drink_provider.dart';
+import 'providers/tip_provider.dart';
 import 'screens/main_screen.dart';
 
 void main() {
@@ -17,6 +18,7 @@ class HydroTrackApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => DrinkProvider()),
+        ChangeNotifierProvider(create: (_) => TipProvider()),
       ],
       child: MaterialApp(
         title: AppConstants.appName,
