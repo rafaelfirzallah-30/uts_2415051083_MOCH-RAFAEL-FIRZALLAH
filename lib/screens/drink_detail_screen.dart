@@ -13,6 +13,67 @@ class DrinkDetailScreen extends StatelessWidget {
     required this.drinkLog,
   });
 
+  void _showDeleteDialog(BuildContext context, DrinkLog log) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 36),
+        title: const Text('Hapus Catatan Minum?'),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus catatan ${log.beverageType} (${log.volumeMl} ml)? Tindakan ini akan menghapus data dari database.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.delete_forever_rounded, size: 18),
+            label: const Text('Ya, Hapus'),
+            onPressed: () async {
+              Navigator.pop(ctx); // Tutup dialog konfirmasi
+
+              final provider = context.read<DrinkProvider>();
+              final success = await provider.deleteDrinkLogInDatabase(log.id);
+
+              if (context.mounted) {
+                if (success) {
+                  Navigator.pop(context); // Kembali ke list/dashboard
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.delete_outline, color: Colors.white),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text('Catatan ${log.beverageType} berhasil dihapus dari database.'),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: Colors.red.shade700,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(provider.errorMessage ?? 'Gagal menghapus data dari database'),
+                      backgroundColor: Colors.red.shade900,
+                    ),
+                  );
+                }
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<DrinkProvider>(
@@ -39,33 +100,7 @@ class DrinkDetailScreen extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.delete_outline, color: Colors.red),
                 tooltip: 'Hapus Data',
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Konfirmasi Hapus'),
-                      content: Text('Hapus catatan ${currentLog.beverageType} (${currentLog.volumeMl} ml)?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Batal'),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                          onPressed: () {
-                            context.read<DrinkProvider>().deleteDrinkLog(currentLog.id);
-                            Navigator.pop(ctx);
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Catatan ${currentLog.beverageType} berhasil dihapus')),
-                            );
-                          },
-                          child: const Text('Hapus'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                onPressed: () => _showDeleteDialog(context, currentLog),
               ),
             ],
           ),

@@ -113,10 +113,24 @@ class DrinkProvider extends ChangeNotifier {
     }
   }
 
-  // DELETE: Menghapus catatan minum
-  void deleteDrinkLog(String id) {
-    _logs.removeWhere((log) => log.id == id);
+  // DELETE: Menghapus catatan minum dari Database (Supabase)
+  Future<bool> deleteDrinkLogInDatabase(String id) async {
+    _isSaving = true;
+    _errorMessage = null;
     notifyListeners();
+
+    try {
+      await _repository.deleteLog(id);
+      _logs.removeWhere((log) => log.id == id);
+      _isSaving = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Gagal menghapus catatan: ${e.toString()}';
+      _isSaving = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   // Perhitungan total konsumsi hari ini (Computed Shared State)

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/app_constants.dart';
 import '../core/app_theme.dart';
+import '../models/drink_log.dart';
 import '../providers/drink_provider.dart';
 import '../widgets/drink_item_tile.dart';
 import 'drink_detail_screen.dart';
@@ -21,6 +22,31 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<bool?> _confirmDeleteDialog(BuildContext context, DrinkLog item) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 36),
+        title: const Text('Hapus Catatan?'),
+        content: Text('Hapus catatan ${item.beverageType} (${item.volumeMl} ml) dari database?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -99,7 +125,7 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
           ),
           const Divider(height: 12),
 
-          // List Items
+          // List Items dengan Fitur Swipe to Delete + Dialog Konfirmasi
           Expanded(
             child: filteredLogs.isEmpty
                 ? const Center(
@@ -113,19 +139,57 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
                     itemCount: filteredLogs.length,
                     itemBuilder: (context, index) {
                       final item = filteredLogs[index];
-                      return DrinkItemTile(
-                        beverageType: item.beverageType,
-                        volumeMl: item.volumeMl,
-                        time: item.formattedTime,
-                        note: item.note,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DrinkDetailScreen(drinkLog: item),
-                            ),
-                          );
+                      return Dismissible(
+                        key: Key(item.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade600,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text(
+                                'Hapus',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.delete_sweep_rounded, color: Colors.white),
+                            ],
+                          ),
+                        ),
+                        confirmDismiss: (direction) async {
+                          return await _confirmDeleteDialog(context, item);
                         },
+                        onDismissed: (direction) async {
+                          final success = await provider.deleteDrinkLogInDatabase(item.id);
+                          if (context.mounted && success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Catatan ${item.beverageType} (${item.volumeMl} ml) berhasil dihapus.'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
+                        child: DrinkItemTile(
+                          beverageType: item.beverageType,
+                          volumeMl: item.volumeMl,
+                          time: item.formattedTime,
+                          note: item.note,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DrinkDetailScreen(drinkLog: item),
+                              ),
+                            );
+                          },
+                        ),
                       );
                     },
                   ),
