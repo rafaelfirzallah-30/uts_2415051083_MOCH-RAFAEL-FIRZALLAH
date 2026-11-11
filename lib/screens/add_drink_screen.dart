@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/app_constants.dart';
 import '../core/app_theme.dart';
+import '../models/drink_log.dart';
+import '../providers/drink_provider.dart';
 
 class AddDrinkScreen extends StatefulWidget {
   const AddDrinkScreen({super.key});
@@ -24,9 +27,21 @@ class _AddDrinkScreenState extends State<AddDrinkScreen> {
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
+      final int volume = int.parse(_volumeController.text.trim());
+      final newLog = DrinkLog(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        beverageType: _selectedType,
+        volumeMl: volume,
+        loggedAt: DateTime.now(),
+        note: _noteController.text.trim(),
+      );
+
+      // Save via Provider
+      context.read<DrinkProvider>().addDrinkLog(newLog);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Berhasil mencatat $_selectedType (${_volumeController.text} ml)'),
+          content: Text('Berhasil mencatat $_selectedType ($volume ml)'),
           backgroundColor: Colors.green,
         ),
       );
@@ -89,7 +104,6 @@ class _AddDrinkScreenState extends State<AddDrinkScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Quick preset chips
               Wrap(
                 spacing: 8,
                 children: AppConstants.quickIntakePresets.map((ml) {

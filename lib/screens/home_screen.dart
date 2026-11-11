@@ -1,74 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/app_constants.dart';
 import '../core/app_theme.dart';
 import '../core/responsive.dart';
 import '../models/drink_log.dart';
+import '../providers/drink_provider.dart';
 import '../widgets/hydration_summary_card.dart';
 import '../widgets/quick_drink_button.dart';
 import '../widgets/drink_item_tile.dart';
 import 'add_drink_screen.dart';
 import 'drink_detail_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   final VoidCallback? onNavigateToList;
 
   const HomeScreen({super.key, this.onNavigateToList});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentIntake = 750;
-  final int _targetIntake = AppConstants.defaultDailyTargetMl;
-
-  final List<DrinkLog> _dummyLogs = [
-    DrinkLog(
-      id: '1',
-      beverageType: 'Air Mineral',
-      volumeMl: 250,
-      loggedAt: DateTime.now().subtract(const Duration(hours: 4)),
-      note: 'Gelas pertama bangun tidur',
-    ),
-    DrinkLog(
-      id: '2',
-      beverageType: 'Teh',
-      volumeMl: 200,
-      loggedAt: DateTime.now().subtract(const Duration(hours: 2)),
-      note: 'Teh hijau hangat',
-    ),
-    DrinkLog(
-      id: '3',
-      beverageType: 'Air Mineral',
-      volumeMl: 300,
-      loggedAt: DateTime.now().subtract(const Duration(minutes: 45)),
-      note: 'Setelah makan siang',
-    ),
-  ];
-
-  void _addQuickIntake(int volume) {
-    setState(() {
-      _currentIntake += volume;
-      _dummyLogs.insert(
-        0,
-        DrinkLog(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          beverageType: 'Air Mineral',
-          volumeMl: volume,
-          loggedAt: DateTime.now(),
-          note: 'Quick log',
-        ),
-      );
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Berhasil menambah $volume ml air!'),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-
-  void _openDetail(DrinkLog item) {
+  void _openDetail(BuildContext context, DrinkLog item) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -77,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openAddDrink() {
+  void _openAddDrink(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -88,83 +36,91 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppTheme.accentLight,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.water_drop, color: AppTheme.primaryBlue, size: 20),
-            ),
-            const SizedBox(width: 8),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Consumer<DrinkProvider>(
+      builder: (context, provider, child) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  AppConstants.appName,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.water_drop, color: AppTheme.primaryBlue, size: 20),
                 ),
-                Text(
-                  AppConstants.appSubtitle,
-                  style: TextStyle(fontSize: 10, color: AppTheme.lightText),
+                const SizedBox(width: 8),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      AppConstants.appName,
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      AppConstants.appSubtitle,
+                      style: TextStyle(fontSize: 10, color: AppTheme.lightText),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Chip(
-              label: Text(
-                Responsive.isWide(context) ? 'Wide' : 'Compact',
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Chip(
+                  label: Text(
+                    Responsive.isWide(context) ? 'Wide' : 'Compact',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  backgroundColor: AppTheme.accentLight,
+                ),
               ),
-              visualDensity: VisualDensity.compact,
-              backgroundColor: AppTheme.accentLight,
+              IconButton(
+                icon: const Icon(Icons.notifications_none_rounded),
+                tooltip: 'Pengingat Minum',
+                onPressed: () {},
+              ),
+            ],
+          ),
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= Responsive.breakpointWide;
+              return isWide
+                  ? _buildWideLayout(context, provider)
+                  : _buildCompactLayout(context, provider);
+            },
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _openAddDrink(context),
+            backgroundColor: AppTheme.primaryBlue,
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text(
+              'Catat Minum',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.notifications_none_rounded),
-            tooltip: 'Pengingat Minum',
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= Responsive.breakpointWide;
-          return isWide ? _buildWideLayout() : _buildCompactLayout();
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddDrink,
-        backgroundColor: AppTheme.primaryBlue,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Catat Minum',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  // 1. COMPACT LAYOUT (< 600px, e.g. Smartphone Portrait)
-  Widget _buildCompactLayout() {
+  // 1. COMPACT LAYOUT (< 600px)
+  Widget _buildCompactLayout(BuildContext context, DrinkProvider provider) {
+    final recentLogs = provider.logs.take(5).toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           HydrationSummaryCard(
-            currentIntakeMl: _currentIntake,
-            targetMl: _targetIntake,
+            currentIntakeMl: provider.todayTotalIntakeMl,
+            targetMl: provider.dailyTargetMl,
           ),
           const SizedBox(height: 20),
           _buildQuickLogHeader(),
@@ -179,7 +135,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 82,
                     child: QuickDrinkButton(
                       volumeMl: volume,
-                      onTap: () => _addQuickIntake(volume),
+                      onTap: () {
+                        provider.quickAddWater(volume);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Berhasil menambah $volume ml air!'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 );
@@ -189,28 +153,40 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 20),
           _buildHistoryHeader(),
           const SizedBox(height: 8),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _dummyLogs.length,
-            itemBuilder: (context, index) {
-              final log = _dummyLogs[index];
-              return DrinkItemTile(
-                beverageType: log.beverageType,
-                volumeMl: log.volumeMl,
-                time: log.formattedTime,
-                note: log.note,
-                onTap: () => _openDetail(log),
-              );
-            },
-          ),
+          recentLogs.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Text(
+                      'Belum ada catatan minum hari ini',
+                      style: TextStyle(color: AppTheme.lightText),
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: recentLogs.length,
+                  itemBuilder: (context, index) {
+                    final log = recentLogs[index];
+                    return DrinkItemTile(
+                      beverageType: log.beverageType,
+                      volumeMl: log.volumeMl,
+                      time: log.formattedTime,
+                      note: log.note,
+                      onTap: () => _openDetail(context, log),
+                    );
+                  },
+                ),
         ],
       ),
     );
   }
 
-  // 2. WIDE / EXPANDED LAYOUT (>= 600px, Tablet & Landscape)
-  Widget _buildWideLayout() {
+  // 2. WIDE / EXPANDED LAYOUT (>= 600px)
+  Widget _buildWideLayout(BuildContext context, DrinkProvider provider) {
+    final recentLogs = provider.logs.take(6).toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -223,8 +199,8 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 HydrationSummaryCard(
-                  currentIntakeMl: _currentIntake,
-                  targetMl: _targetIntake,
+                  currentIntakeMl: provider.todayTotalIntakeMl,
+                  targetMl: provider.dailyTargetMl,
                 ),
                 const SizedBox(height: 20),
                 _buildQuickLogHeader(),
@@ -237,7 +213,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 85,
                       child: QuickDrinkButton(
                         volumeMl: volume,
-                        onTap: () => _addQuickIntake(volume),
+                        onTap: () {
+                          provider.quickAddWater(volume);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Berhasil menambah $volume ml air!'),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
                       ),
                     );
                   }).toList(),
@@ -255,21 +239,31 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 _buildHistoryHeader(),
                 const SizedBox(height: 8),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _dummyLogs.length,
-                  itemBuilder: (context, index) {
-                    final log = _dummyLogs[index];
-                    return DrinkItemTile(
-                      beverageType: log.beverageType,
-                      volumeMl: log.volumeMl,
-                      time: log.formattedTime,
-                      note: log.note,
-                      onTap: () => _openDetail(log),
-                    );
-                  },
-                ),
+                recentLogs.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text(
+                            'Belum ada catatan minum hari ini',
+                            style: TextStyle(color: AppTheme.lightText),
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: recentLogs.length,
+                        itemBuilder: (context, index) {
+                          final log = recentLogs[index];
+                          return DrinkItemTile(
+                            beverageType: log.beverageType,
+                            volumeMl: log.volumeMl,
+                            time: log.formattedTime,
+                            note: log.note,
+                            onTap: () => _openDetail(context, log),
+                          );
+                        },
+                      ),
               ],
             ),
           ),
@@ -305,7 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         TextButton(
-          onPressed: widget.onNavigateToList,
+          onPressed: onNavigateToList,
           child: const Text('Lihat Semua'),
         ),
       ],

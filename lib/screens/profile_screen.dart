@@ -1,12 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/app_constants.dart';
 import '../core/app_theme.dart';
+import '../providers/drink_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  void _showEditTargetDialog(BuildContext context, DrinkProvider provider) {
+    final controller = TextEditingController(text: provider.dailyTargetMl.toString());
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ubah Target Minum'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Target Harian (ml)',
+            suffixText: 'ml',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final newTarget = int.tryParse(controller.text);
+              if (newTarget != null && newTarget > 0) {
+                provider.setDailyTarget(newTarget);
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Target harian diubah menjadi $newTarget ml')),
+                );
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final drinkProvider = context.watch<DrinkProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil & Pengaturan'),
@@ -63,18 +105,19 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Settings Card
+            // Settings Card with Shared State
             Card(
               child: Column(
                 children: [
                   ListTile(
                     leading: const Icon(Icons.water_drop_outlined, color: AppTheme.primaryBlue),
                     title: const Text('Target Minum Harian'),
-                    trailing: const Text(
-                      '${AppConstants.defaultDailyTargetMl} ml',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    subtitle: const Text('Klik untuk mengubah target'),
+                    trailing: Text(
+                      '${drinkProvider.dailyTargetMl} ml',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
                     ),
-                    onTap: () {},
+                    onTap: () => _showEditTargetDialog(context, drinkProvider),
                   ),
                   const Divider(height: 1),
                   ListTile(

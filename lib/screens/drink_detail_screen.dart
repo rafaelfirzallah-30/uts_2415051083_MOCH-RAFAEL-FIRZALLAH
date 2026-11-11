@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/app_theme.dart';
 import '../models/drink_log.dart';
+import '../providers/drink_provider.dart';
 import 'edit_drink_screen.dart';
 
 class DrinkDetailScreen extends StatelessWidget {
@@ -46,6 +48,8 @@ class DrinkDetailScreen extends StatelessWidget {
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                       onPressed: () {
+                        // Delete via Provider
+                        context.read<DrinkProvider>().deleteDrinkLog(drinkLog.id);
                         Navigator.pop(ctx);
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(

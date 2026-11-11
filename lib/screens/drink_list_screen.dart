@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/app_constants.dart';
 import '../core/app_theme.dart';
-import '../models/drink_log.dart';
+import '../providers/drink_provider.dart';
 import '../widgets/drink_item_tile.dart';
 import 'drink_detail_screen.dart';
 import 'add_drink_screen.dart';
@@ -14,46 +15,7 @@ class DrinkListScreen extends StatefulWidget {
 }
 
 class _DrinkListScreenState extends State<DrinkListScreen> {
-  String _selectedCategory = 'Semua';
   final TextEditingController _searchController = TextEditingController();
-
-  final List<DrinkLog> _allLogs = [
-    DrinkLog(
-      id: '1',
-      beverageType: 'Air Mineral',
-      volumeMl: 250,
-      loggedAt: DateTime.now().subtract(const Duration(hours: 6)),
-      note: 'Gelas pertama bangun tidur',
-    ),
-    DrinkLog(
-      id: '2',
-      beverageType: 'Teh',
-      volumeMl: 200,
-      loggedAt: DateTime.now().subtract(const Duration(hours: 4)),
-      note: 'Teh hijau hangat',
-    ),
-    DrinkLog(
-      id: '3',
-      beverageType: 'Air Mineral',
-      volumeMl: 300,
-      loggedAt: DateTime.now().subtract(const Duration(hours: 2)),
-      note: 'Setelah makan siang',
-    ),
-    DrinkLog(
-      id: '4',
-      beverageType: 'Kopi',
-      volumeMl: 150,
-      loggedAt: DateTime.now().subtract(const Duration(hours: 1)),
-      note: 'Kopi hitam tanpa gula',
-    ),
-    DrinkLog(
-      id: '5',
-      beverageType: 'Jus Buah',
-      volumeMl: 250,
-      loggedAt: DateTime.now().subtract(const Duration(minutes: 30)),
-      note: 'Jus jeruk segar',
-    ),
-  ];
 
   @override
   void dispose() {
@@ -63,15 +25,8 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredLogs = _allLogs.where((log) {
-      final matchesCategory = _selectedCategory == 'Semua' ||
-          log.beverageType.toLowerCase() == _selectedCategory.toLowerCase();
-      final query = _searchController.text.toLowerCase();
-      final matchesSearch = query.isEmpty ||
-          log.beverageType.toLowerCase().contains(query) ||
-          log.note.toLowerCase().contains(query);
-      return matchesCategory && matchesSearch;
-    }).toList();
+    final provider = context.watch<DrinkProvider>();
+    final filteredLogs = provider.filteredLogs;
 
     return Scaffold(
       appBar: AppBar(
@@ -103,7 +58,8 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
                     ? IconButton(
                         icon: const Icon(Icons.clear),
                         onPressed: () {
-                          setState(() => _searchController.clear());
+                          _searchController.clear();
+                          provider.setSearchQuery('');
                         },
                       )
                     : null,
@@ -113,7 +69,9 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
                   borderSide: BorderSide(color: Colors.grey.shade300),
                 ),
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: (val) {
+                provider.setSearchQuery(val);
+              },
             ),
           ),
 
@@ -123,16 +81,14 @@ class _DrinkListScreenState extends State<DrinkListScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: ['Semua', ...AppConstants.beverageCategories].map((cat) {
-                final isSelected = _selectedCategory == cat;
+                final isSelected = provider.selectedCategory == cat;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: FilterChip(
                     label: Text(cat),
                     selected: isSelected,
                     onSelected: (selected) {
-                      setState(() {
-                        _selectedCategory = cat;
-                      });
+                      provider.setCategoryFilter(cat);
                     },
                     selectedColor: AppTheme.accentLight,
                     checkmarkColor: AppTheme.primaryBlue,

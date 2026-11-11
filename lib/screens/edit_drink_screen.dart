@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/app_constants.dart';
 import '../core/app_theme.dart';
 import '../models/drink_log.dart';
+import '../providers/drink_provider.dart';
 
 class EditDrinkScreen extends StatefulWidget {
   final DrinkLog drinkLog;
@@ -41,6 +43,16 @@ class _EditDrinkScreenState extends State<EditDrinkScreen> {
 
   void _saveChanges() {
     if (_formKey.currentState!.validate()) {
+      final int volume = int.parse(_volumeController.text.trim());
+      final updatedLog = widget.drinkLog.copyWith(
+        beverageType: _selectedType,
+        volumeMl: volume,
+        note: _noteController.text.trim(),
+      );
+
+      // Update via Provider
+      context.read<DrinkProvider>().updateDrinkLog(updatedLog);
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Perubahan data berhasil disimpan')),
       );
